@@ -555,7 +555,7 @@ body{font-family:var(--font-b);background:var(--bg-void);color:var(--text);min-h
     </div>
     <div class="stats-bar">
       <div class="stat-card"><div class="stat-num">10</div><div class="stat-lbl">Regulations Tracked</div></div>
-      <div class="stat-card"><div class="stat-num">~40K</div><div class="stat-lbl">Ships Affected (CII)</div></div>
+      <div class="stat-card"><div class="stat-num">40K</div><div class="stat-lbl">Ships Affected (CII, approx.)</div></div>
       <div class="stat-card"><div class="stat-num">2050</div><div class="stat-lbl">IMO Net Zero Target</div></div>
       <div class="stat-card"><div class="stat-num">85</div><div class="stat-lbl">NZF Adoption — Dec 2026</div></div>
     </div>
@@ -1630,9 +1630,9 @@ function renderCards(filter = 'all') {
       </div>
       <div class="card-name">${r.name}</div>
       <div class="card-meta">
-        <div class="card-meta-item"><strong>In Force</strong>${r.inForce.split(' ').slice(-1)[0]}</div>
+        <div class="card-meta-item"><strong>In Force</strong>${(r.inForce.match(/\b(19|20)\d{2}\b/)||[r.inForce])[0]}</div>
         <div class="card-meta-item"><strong>Category</strong>${r.category}</div>
-        <div class="card-meta-item"><strong>Min Size</strong>${r.applies.minSize.split(' ').slice(0,2).join(' ')}</div>
+        <div class="card-meta-item"><strong>Min Size</strong>${r.applies.minSize.split(/[;(:]/)[0].trim().split(' ').slice(0,2).join(' ').replace(/[,;:]$/,'')}</div>
       </div>
       <div class="card-tags">
         ${r.applies.types.slice(0,3).map(t=>`<span class="tag">${t}</span>`).join('')}
