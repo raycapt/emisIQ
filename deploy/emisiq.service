@@ -1,0 +1,30 @@
+[Unit]
+Description=EmisIQ (maritime emissions intelligence)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=meridian
+Group=meridian
+WorkingDirectory=/opt/emisiq
+Environment=NODE_ENV=production
+Environment=PORT=4890
+Environment=HOST=127.0.0.1
+# ANTHROPIC_API_KEY, ACCESS_TEAM_DOMAIN, ACCESS_AUD, ACCESS_ALLOWED_EMAILS
+EnvironmentFile=-/etc/emisiq/env
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+MemoryMax=300M
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

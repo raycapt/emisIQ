@@ -509,26 +509,6 @@ body{font-family:var(--font-b);background:var(--bg-void);color:var(--text);min-h
 </head>
 <body>
 
-<!-- ═══════════ SETTINGS / API KEY MODAL ═══════════ -->
-<div id="settings-overlay">
-  <div id="settings-box">
-    <div class="settings-logo">EmisIQ</div>
-    <div class="settings-title">Connect AI Assistant</div>
-    <div class="settings-desc">
-      EmisIQ's AI Q&A engine is powered by the Anthropic Claude API. To enable it, enter your API key below. 
-      Get one free at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.<br><br>
-      Your key is stored only in this browser session — never sent anywhere except Anthropic's servers.
-    </div>
-    <div class="settings-key-wrap">
-      <input class="settings-input" type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
-      <button class="settings-save-btn" onclick="saveAPIKey()">Save & Enter</button>
-    </div>
-    <div class="settings-note">Key format: sk-ant-api... · Only used for the Ask EmisIQ AI panel · All regulation data, calculators, ECA maps work without a key</div>
-    <div class="settings-skip" onclick="skipAPIKey()">Skip — use EmisIQ without AI (calculators & regulations still work)</div>
-  </div>
-</div>
-
-
 <div id="hero">
   <canvas id="ocean"></canvas>
   <div class="hero-content">
@@ -560,7 +540,7 @@ body{font-family:var(--font-b);background:var(--bg-void);color:var(--text);min-h
   <div class="nav-right">
     <div class="nav-scan-badge"><div class="scan-dot"></div>Daily Scan Active</div>
     <button class="ai-btn" onclick="toggleAI()">⚡ Ask EmisIQ AI</button>
-    <button style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text-2);width:34px;height:34px;border-radius:var(--rad);cursor:pointer;font-size:0.9rem;" onclick="document.getElementById('settings-overlay').style.display='flex'" title="API Key Settings">⚙</button>
+    <span id="ai-status" title="Claude AI status" style="display:inline-flex;align-items:center;gap:6px;padding:0 10px;height:34px;border:1px solid var(--border);border-radius:var(--rad);font-size:0.72rem;color:var(--text-2);white-space:nowrap;"><i id="ai-dot" style="width:7px;height:7px;border-radius:50%;background:#64748b;display:inline-block;"></i><span id="ai-label">AI…</span></span>
   </div>
 </nav>
 
@@ -681,7 +661,7 @@ body{font-family:var(--font-b);background:var(--bg-void);color:var(--text);min-h
               <option value="1.0" selected>2026 (100% phase-in — full + CH₄/N₂O)</option>
             </select>
           </div>
-          <div class="form-field"><label class="form-label">EUA Price (€/tonne CO₂)</label><input class="form-input" type="number" id="ets-price" placeholder="e.g. 65" value="65"></div>
+          <div class="form-field"><label class="form-label">EUA Price (€/tonne CO₂)</label><input class="form-input" type="number" id="ets-price" placeholder="e.g. 88" value="88"></div>
           <button class="calc-btn" onclick="calcETS()">Calculate ETS Exposure</button>
         </div>
         <div class="calc-results" id="ets-results">
@@ -734,10 +714,10 @@ body{font-family:var(--font-b);background:var(--bg-void);color:var(--text);min-h
           <div class="form-field"><label class="form-label">Bio-blended fuel consumed (MT)</label><input class="form-input" type="number" id="feu-bio" placeholder="e.g. 0" value="0"></div>
           <div class="form-field"><label class="form-label">Reporting Year</label>
             <select class="form-select" id="feu-year">
-              <option value="91.16" selected>2025 — target 91.16 gCO₂eq/MJ</option>
-              <option value="89.34">2030 — target 89.34 gCO₂eq/MJ</option>
-              <option value="78.51">2035 — target 78.51 gCO₂eq/MJ</option>
-              <option value="61.27">2040 — target 61.27 gCO₂eq/MJ</option>
+              <option value="89.34" selected>2025–2029 — limit 89.34 gCO₂eq/MJ</option>
+              <option value="85.69">2030–2034 — limit 85.69 gCO₂eq/MJ</option>
+              <option value="77.94">2035–2039 — limit 77.94 gCO₂eq/MJ</option>
+              <option value="62.90">2040–2044 — limit 62.90 gCO₂eq/MJ</option>
             </select>
           </div>
           <button class="calc-btn" onclick="calcFuelEU()">Calculate GHG Intensity</button>
@@ -755,8 +735,10 @@ body{font-family:var(--font-b);background:var(--bg-void);color:var(--text);min-h
           <div class="calc-group-title">UK ETS Parameters</div>
           <div class="form-field"><label class="form-label">Voyage Type</label>
             <select class="form-select" id="ukets-voyage">
-              <option value="1.0">Intra-UK (100% scope)</option>
-              <option value="0.5">UK ↔ Non-UK (50% scope)</option>
+              <option value="1.0">Domestic UK ↔ UK voyage (100%)</option>
+              <option value="0.5">Great Britain ↔ Northern Ireland (50%)</option>
+              <option value="1.0">Emissions in a UK port (100%)</option>
+              <option value="0">UK ↔ international (not covered yet)</option>
             </select>
           </div>
           <div class="form-field"><label class="form-label">Fuel Type</label>
@@ -770,12 +752,12 @@ body{font-family:var(--font-b);background:var(--bg-void);color:var(--text);min-h
           <div class="form-field"><label class="form-label">Fuel Consumed (MT)</label><input class="form-input" type="number" id="ukets-fuel-amt" placeholder="e.g. 1200" value="1200"></div>
           <div class="form-field"><label class="form-label">Reporting Year</label>
             <select class="form-select" id="ukets-year">
-              <option value="0.4" selected>2026 (40% phase-in — CURRENT)</option>
-              <option value="0.7">2027 (70% phase-in)</option>
-              <option value="1.0">2028+ (100% phase-in)</option>
+              <option value="1.0" selected>2026 (from 1 Jul) — 100%, no phase-in</option>
+              <option value="1.0">2027 — 100%</option>
+              <option value="1.0">2028+ — 100%</option>
             </select>
           </div>
-          <div class="form-field"><label class="form-label">UKA Price (£/tonne CO₂)</label><input class="form-input" type="number" id="ukets-price" placeholder="e.g. 40" value="40"></div>
+          <div class="form-field"><label class="form-label">UKA Price (£/tonne CO₂)</label><input class="form-input" type="number" id="ukets-price" placeholder="e.g. 66" value="66"></div>
           <button class="calc-btn" onclick="calcUKETS()">Calculate UK ETS Exposure</button>
         </div>
         <div class="calc-results" id="ukets-results">
@@ -925,14 +907,15 @@ body{font-family:var(--font-b);background:var(--bg-void);color:var(--text);min-h
         </div>
         <div class="form-field"><label class="form-label">FuelEU Year (GHG target)</label>
           <select class="form-select" id="fe-fueleu-year">
-            <option value="91.16" selected>2025 — 91.16 gCO₂eq/MJ</option>
-            <option value="89.34">2030 — 89.34 gCO₂eq/MJ</option>
-            <option value="78.51">2035 — 78.51 gCO₂eq/MJ</option>
+            <option value="89.34" selected>2025–2029 — 89.34 gCO₂eq/MJ</option>
+            <option value="85.69">2030–2034 — 85.69 gCO₂eq/MJ</option>
+            <option value="77.94">2035–2039 — 77.94 gCO₂eq/MJ</option>
+            <option value="62.90">2040–2044 — 62.90 gCO₂eq/MJ</option>
           </select>
         </div>
         <div class="eval-section-title">Market Prices</div>
         <div class="form-field"><label class="form-label">EUA Price (€/tonne CO₂)</label>
-          <input class="form-input" type="number" id="fe-eua" placeholder="e.g. 65" value="65">
+          <input class="form-input" type="number" id="fe-eua" placeholder="e.g. 88" value="88">
         </div>
         <div class="form-field"><label class="form-label">IMO NZF levy ($/tCO₂eq — Tier 1 deficit)</label>
           <input class="form-input" type="number" id="fe-nzf" placeholder="100 per NZF draft" value="100">
@@ -982,7 +965,7 @@ body{font-family:var(--font-b);background:var(--bg-void);color:var(--text);min-h
               <strong>How fuel values differ by regulation — and why FuelEU has no CF (tCO₂/t) column:</strong>
               <strong>CII / EEXI / EEDI / EU ETS</strong> use the direct combustion CO₂ factor (CF) in <em>tCO₂/t fuel</em> — tank-to-wake only, per MARPOL Annex VI Table 1. Upstream emissions are invisible to these frameworks.
               <strong>FuelEU Maritime &amp; IMO NZF/GFI</strong> operate entirely in <em>gCO₂eq/MJ Well-to-Wake</em> — there is no CF in tCO₂/t under FuelEU. The WtW column IS the FuelEU metric. It covers all GHGs (CO₂ + CH₄ + N₂O as CO₂eq) across the full supply chain per unit of energy.
-              The TTW column (gCO₂/MJ, combustion only) is the bridge between the two: TTW × LCV ÷ 1000 = CF in tCO₂/t — you can verify: VLSFO 78.4 × 40.2 ÷ 1000 = 3.151 ✓. The WtW–TTW gap is the upstream penalty — largest for grey H₂ and fossil LNG (methane slip).
+              The TTW column (gCO₂/MJ, combustion only) is the bridge between the two: TTW × LCV ÷ 1000 = CF in tCO₂/t — you can verify: VLSFO 76.9 × 41.0 ÷ 1000 = 3.151 ✓. The WtW–TTW gap is the upstream penalty — largest for grey H₂ and fossil LNG (methane slip).
             </div>
             <div class="fuel-legend">
               <div class="fuel-legend-item"><div class="fuel-legend-dot" style="background:#64748b;"></div>Fossil</div>
@@ -1008,7 +991,7 @@ body{font-family:var(--font-b);background:var(--bg-void);color:var(--text);min-h
                     <th class="num">WtW gCO₂eq/MJ <span style="font-weight:400;opacity:0.6;">FuelEU · NZF/GFI</span></th>
                     <th>Sulphur</th>
                     <th>ECA SOx</th>
-                    <th>FuelEU 2025 <span style="font-weight:400;opacity:0.6;">vs 91.16</span></th>
+                    <th>FuelEU 2025 <span style="font-weight:400;opacity:0.6;">vs 89.34 limit</span></th>
                     <th>NZF 2028 <span style="font-weight:400;opacity:0.6;">vs 85.5</span></th>
                     <th>Source / Note</th>
                   </tr>
@@ -1205,8 +1188,8 @@ const REGS = {
   eexi:{id:'eexi',code:'EEXI',name:'Energy Efficiency Existing Ship Index',authority:'IMO / MARPOL Annex VI Reg. 23',status:'IN FORCE',color:'#1a7fe8',category:'Technical',inForce:'01 November 2022',lastUpdate:'MEPC 83 — April 2025 (Phase 1 review complete — no gaps identified)',nextUpdate:'MEPC 84 — Spring 2026 (Phase 2 review)',badge:'MARPOL',applies:{types:['Bulk Carriers','Tankers','Container Ships','Gas Carriers','Chemical Tankers','General Cargo','LNG Carriers','Ro-Ro Ships'],minSize:'400 GT (certain types); thresholds vary 400–24,999 GT by ship type',voyages:'International voyages',flag:'All flag states'},areas:'Global — one-time technical certification; not route/voyage specific',highlights:['One-time compliance certification — ship complies or does not; not annual like CII','Attained EEXI must be ≤ Required EEXI (reference line × reduction factor)','Engine Power Limitation (EPL) or Shaft Power Limitation (SHaPoLi) are primary compliance paths','MEPC 83 (Apr 2025) Phase 1 review: NO gaps identified in EEXI — no tightening or amendments at this stage','Required EEXI = EEDI Phase 3 reference line value for most ship types','IEEC (International Energy Efficiency Certificate) amended to include EEXI statement','MEPC 83 updated EEDI survey/certification guidelines to reference ISO 15016:2025 for sea trials (ships with sea trials before 1 May 2026 may still use ISO 15016:2015)','If EPL applied, official record of power limit must be posted in engine room'],timeline:[{date:'Nov 2022',event:'EEXI certification required',detail:'All existing ships ≥5,000 GT must hold valid EEXI by first annual/intermediate/renewal survey after this date.',type:'past'},{date:'2023',event:'Industry certification drive',detail:'Class societies processed thousands of EEXI applications; EPL widely applied.',type:'past'},{date:'Jul 2023',event:'MEPC 80',detail:'Minor guidance updates; EEXI review as part of broader GHG strategy revision.',type:'past'},{date:'Apr 2025',event:'MEPC 83 — Phase 1 review: no EEXI gaps ✓',detail:'Committee concluded Phase 1 review — no gaps or challenges identified in EEXI. Res. MEPC.403(83) updated EEDI survey/certification guidelines (ISO 15016:2025 reference for sea trials).',type:'past'},{date:'2026–2028',event:'Phase 2 review ongoing',detail:'Phase 2 covers SEEMP enhancement and CII metrics development; EEXI not currently flagged for revision.',type:'future'}],calc:{formula:'Attained EEXI = (PME × SFCME + PAE × SFCAE) × CF / (Capacity × Vref)',units:'gCO₂/tonne-nm',steps:['1. PME = 75% × MCR (kW) of main engine — or EPL-limited value if applied','2. SFCME = certified SFC at 75% MCR (g/kWh), from NOx Technical File','3. PAE = auxiliary power = 0.025 × PME + 250 kW (simplified; actual per MARPOL formula)','4. SFCAE = SFC of auxiliary engines (assume ~220 g/kWh if unknown)','5. CF = CO₂ factor for fuel type (HFO 3.114, VLSFO 3.151, MGO 3.206)','6. Capacity = DWT for bulk/tanker; GT for some types','7. Vref = speed at 75% MCR in calm water, summer draft','8. Required EEXI = Reference line value × (1 – X%) — X varies 5–30% by ship type/size'],note:'Reference line: bulk carriers a=3257.1, c=0.547; tankers a=1218.8, c=0.488. Required = ref × (1-0.20) for bulk ≥20K DWT Phase 3'}},
   eedi:{id:'eedi',code:'EEDI',name:'Energy Efficiency Design Index',authority:'IMO / MARPOL Annex VI Reg. 20-21',status:'IN FORCE',color:'#7c3aed',category:'Technical',inForce:'01 January 2013',lastUpdate:'MEPC 83 — April 2025 (Res. MEPC.403(83) — survey/certification guidelines updated)',nextUpdate:'MEPC 84 — Spring 2026 (Phase 2 review)',badge:'MARPOL',applies:{types:['Bulk Carriers','Tankers','Container Ships','Gas Carriers','General Cargo','Refrigerated Cargo','Combination Carriers','LNG Carriers'],minSize:'400 GT',voyages:'New ships only — keel-laying date determines phase',flag:'All flag states'},areas:'Global — design-stage certification; one-time per vessel',highlights:['Applies to NEW ships only — existing ships use EEXI instead','Phase 3 (from 2022) requires 30% improvement over 2008 baseline for most ship types','Phase 0 (2013–2014): 0%; Phase 1 (2015–2019): 10%; Phase 2 (2020–2021): 20%; Phase 3 (2022+): 30%','MEPC 83 (Apr 2025) Res. MEPC.403(83): updated survey/certification guidelines to reference ISO 15016:2025 for sea trials; ships with sea trials before 1 May 2026 may continue to use ISO 15016:2015','Verified at design stage; Technical File and EEDI Report produced by classification society','Wind-assisted propulsion, shaft generators, and waste heat recovery can credit EEDI','Phase 4 discussions ongoing — no keel-laying date confirmed yet; timeline expected to emerge from MEPC 84+'],timeline:[{date:'Jan 2013',event:'EEDI Phase 0 in force',detail:'Voluntary phase initially; mandatory for new ships from this date.',type:'past'},{date:'Jan 2015',event:'Phase 1 — 10% reduction',detail:'10% improvement over 2008 reference line required for new ships.',type:'past'},{date:'Jan 2020',event:'Phase 2 — 20% reduction',detail:'20% improvement; some ship types had accelerated timelines.',type:'past'},{date:'Jan 2022',event:'Phase 3 — 30% reduction',detail:'30% improvement for most ship types; significant design challenge for slow-steaming vessels.',type:'past'},{date:'2025+',event:'Phase 4 (proposed)',detail:'~40% reduction under development at MEPC; keel-laying date TBD.',type:'future'}],calc:{formula:'Attained EEDI = (PME × SFCME + PAE × SFCAE) × CF / (Capacity × Vref)',units:'gCO₂/tonne-nm',steps:['1. PME = 75% × total installed main engine MCR (kW)','2. SFCME = certified specific fuel consumption at 75% MCR (g/kWh) from NOx Technical File','3. PAE = 0.025 × PME + 250 kW for ships with main engine >10,000 kW','4. SFCAE = 220 g/kWh assumed for auxiliary engines (or certified value)','5. CF = CO₂ factor per fuel type; HFO 3.114, MDO 3.206','6. Capacity = DWT at summer loadline for applicable ship types','7. Vref = ship speed at 75% MCR, summer draft, calm water, clean hull','8. Required EEDI = Reference line × (1 – Phase reduction%)'],note:'EEDI reference lines from 2008-2012 fleet data (MEPC.1/Circ.884). Example bulk carrier Phase 3: required = 4745 × DWT^(-0.622) × 0.70'}},
   euets:{id:'euets',code:'EU ETS',name:'EU Emissions Trading System',authority:'European Union / Directive 2003/87/EC (as amended)',status:'IN FORCE',color:'#f59e0b',category:'Market-Based',inForce:'01 January 2024 (shipping)',lastUpdate:'Jan 2026 — 100% phase-in + CH₄/N₂O now in scope',nextUpdate:'Sep 2026 — first 70%-phase EUA surrender (2025 data)',badge:'EU LAW',applies:{types:['All cargo ships','All passenger ships','Offshore supply vessels','Ro-Ro ships','Container vessels','Bulk carriers','Tankers'],minSize:'5,000 GT',voyages:'Intra-EU voyages (100%), EU-Non-EU voyages (50%), EU offshore (100%)',flag:'All flag states calling EU/EEA ports'},areas:'EU / EEA member state ports — includes 50% of voyages between EU and non-EU ports',highlights:['Phase-in completed: 40% (2024), 70% (2025), 100% from 1 January 2026','CH₄ and N₂O now included in scope from 1 January 2026 — not just CO₂','The shipping company (DoC holder / ISM company) is the responsible entity, not necessarily the registered owner','EU Allowances (EUAs) must be surrendered annually by 30 September of the following year','Monitoring, Reporting & Verification (MRV) under EU MRV Reg. 2015/757 is the data foundation','Non-compliance penalty: €100 per tonne CO₂ + outstanding allowances still required to be surrendered','EUA market price: check ICE ECX EUA futures for current price — has traded €40–100/tonne range','Sea Cargo Charter ETS addendum or BIMCO ETS Clause commonly used to pass ETS cost to voyage charterer'],timeline:[{date:'Jan 2024',event:'EU ETS shipping launched',detail:'40% phase-in; shipping companies must open EUA accounts and begin monitoring.',type:'past'},{date:'Sep 2024',event:'First EUA surrender',detail:'Surrender of 40% of 2023 verified emissions by eligible shipping companies.',type:'past'},{date:'Jan 2025',event:'70% phase-in',detail:'Coverage increases to 70%; CH₄ and N₂O monitoring begins in preparation for 2026.',type:'past'},{date:'Jan 2026',event:'100% phase-in + CH₄/N₂O ✓',detail:'Full phase-in from 1 January 2026. Methane and nitrous oxide now included in surrender obligation.',type:'past'},{date:'Sep 2026',event:'First 100% EUA surrender',detail:'EUAs covering 100% of 2025 verified CO₂ (70% phase-in year) due 30 Sep 2026. First CH₄/N₂O surrender due Sep 2027.',type:'future'},{date:'2026–2027',event:'Commission review',detail:'EC to report on implementation; potential scope/methodology amendments including smaller vessels.',type:'future'}],calc:{formula:'EUAs Required = CO₂ × Phase-in factor × Voyage factor',units:'EUA (EU Allowance) = 1 tonne CO₂',steps:['1. Calculate voyage CO₂ = fuel consumed (MT) × CO₂ factor (e.g. VLSFO ×3.151)','2. Voyage factor: 1.00 for intra-EU; 0.50 for EU↔non-EU; 1.00 for EU offshore','3. Phase-in factor: 0.40 (2024), 0.70 (2025), 1.00 (2026+)','4. EUAs required = CO₂ × voyage factor × phase-in factor','5. Cost = EUAs × market EUA price (€/tonne)','6. Annualise across all eligible voyages for full year exposure'],note:'EUA price tracker: ICE ECX futures (EUAD). Contractual pass-through via Sea Cargo Charter ETS addendum or BIMCO ETS clause. Non-compliance = €100/tCO₂ fine + allowances still required'}},
-  ukets:{id:'ukets',code:'UK ETS',name:'UK Emissions Trading Scheme',authority:'UK Government / Climate Change Act 2008 / SI 2020/1265',status:'IN FORCE',color:'#f97316',category:'Market-Based',inForce:'01 January 2026 (shipping)',lastUpdate:'Jan 2026 — UK ETS shipping obligation commenced',nextUpdate:'Sep 2027 — first UKA surrender (2026 data)',badge:'UK LAW',applies:{types:['Cargo ships','Passenger ships','Offshore supply vessels','Ro-Ro ships'],minSize:'5,000 GT',voyages:'Intra-UK voyages (100%), UK-Non-UK voyages (50%)',flag:'All flag states calling UK ports'},areas:'UK ports — parallel structure to EU ETS; separate scheme post-Brexit',highlights:['UK ETS shipping is NOW IN FORCE from 1 January 2026 — 40% phase-in year','Uses UK Allowances (UKAs), not EUAs — no cross-recognition with EU ETS; entirely separate schemes','Phase-in: 40% (2026), 70% (2027), 100% (2028+); first UKA surrender due 30 September 2027','Shipping companies must be registered in UK ETS registry (HMRC/Environment Agency)','No double-counting: voyages covered by EU ETS are excluded from UK ETS scope','Vessels trading both EU and UK ports face combined ETS exposure — requires voyage-level analysis','Combined EU + UK ETS particularly significant for vessels on Atlantic, North Sea, and Channel trades','UKA price market smaller and less liquid than EUA; monitor LEBA/ICE for UKA futures'],timeline:[{date:'2024',event:'UK consultation concluded',detail:'Government confirms shipping inclusion from 2026; phase-in schedule published.',type:'past'},{date:'2025',event:'Implementing regulations & registry',detail:'Final statutory instruments published; UK ETS registry opened for shipping company registration.',type:'past'},{date:'Jan 2026',event:'UK ETS shipping LAUNCHED ✓',detail:'40% phase-in begins. Shipping companies monitoring UK-scope voyages. First obligation period underway.',type:'past'},{date:'Sep 2027',event:'First UKA surrender',detail:'UKAs covering 40% of 2026 verified UK-scope emissions due 30 September 2027.',type:'future'},{date:'Jan 2028',event:'100% phase-in',detail:'Full obligation for UK-scope voyages. UKA surrender annually by 30 September.',type:'future'}],calc:{formula:'UKAs Required = CO₂ × Phase-in factor × Voyage factor',units:'UKA (UK Allowance) = 1 tonne CO₂',steps:['1. Calculate voyage CO₂ = fuel consumed (MT) × CO₂ factor','2. Voyage factor: 1.00 intra-UK; 0.50 UK↔non-UK','3. Phase-in: ×0.40 (2026), ×0.70 (2027), ×1.00 (2028+)','4. Exclude any voyages already covered under EU ETS scope','5. UKAs required = CO₂ × voyage factor × phase-in','6. Cost = UKAs × UKA price (£/tonne)'],note:'EU ETS and UK ETS are entirely separate; vessels must manage both independently. No mutual recognition of allowances. Watch for divergence in methodology post-2026.'}},
-  fueleu:{id:'fueleu',code:'FuelEU',name:'FuelEU Maritime',authority:'European Union / Regulation (EU) 2023/1805',status:'IN FORCE',color:'#22c55e',category:'Fuel Standard',inForce:'01 January 2025',lastUpdate:'Jan 2025 — entered force; monitoring underway for first compliance year',nextUpdate:'Sep 2026 — first compliance statement due (2025 data)',badge:'EU LAW',applies:{types:['All cargo ships','All passenger ships','Offshore vessels'],minSize:'5,000 GT',voyages:'EU port calls — intra-EU (100%), extra-EU voyages (50%), at-berth energy (100%)',flag:'All flag states calling EU/EEA ports'},areas:'EU/EEA ports — energy used at berth (OPS) and 50% of extra-EU voyage energy consumption',highlights:['GHG intensity of total onboard energy use must not exceed annual limit (Well-to-Wake basis)','Baseline: 91.16 gCO₂eq/MJ; trajectory: -2% (2025), -6% (2030), -14.5% (2035), -31% (2040), -62% (2045), -80% (2050)','Well-to-Wake (WtW) lifecycle emissions — not just tank-to-wake; rewards sustainable fuel production chains','Onshore Power Supply (OPS / cold ironing) mandatory at EU ports from 2030 for container and passenger ships','Non-compliance penalty: €2,400 per tonne VLSFO equivalent excess GHG + vessel detained if 3 consecutive years','Pooling mechanism: surplus compliance can be sold to non-compliant vessels within same company or externally','SAF (sustainable aviation fuel), green methanol, green ammonia, e-fuels receive lifecycle WtW carbon credits','RFNBO (renewable fuels of non-biological origin) multiplier: counts double toward 2030 sub-target'],timeline:[{date:'Jan 2025',event:'FuelEU enters force ✓',detail:'First reporting year underway; GHG intensity monitoring required for all eligible ships.',type:'past'},{date:'Sep 2026',event:'First compliance statement due',detail:'Shipping companies submit 2025 GHG intensity documents via accredited verifier to EU database. Non-compliance penalties apply.',type:'future'},{date:'Jan 2030',event:'OPS mandatory + 6% reduction',detail:'Container and passenger ships must use shore power at TEN-T core ports; GHG target tightens to 89.34 gCO₂eq/MJ.',type:'future'},{date:'2035–2050',event:'Progressive tightening',detail:'14.5% (2035) → 31% (2040) → 62% (2045) → 80% (2050) reductions — forces increasing low-carbon and zero-carbon fuel adoption.',type:'future'}],calc:{formula:'GHG Intensity = Σ(Energy_i × WtW_factor_i) / Σ(Energy_i)',units:'gCO₂eq/MJ (Well-to-Wake)',steps:['1. Convert each fuel to energy: MJ = MT × LCV (MJ/kg × 1000)','   LCV: VLSFO 40.2, HFO 40.2, MGO 42.7, LNG 48.0, Methanol 19.9 MJ/kg','2. Apply WtW GHG factor per fuel type (gCO₂eq/MJ)','   WtW: VLSFO ~91.5, HFO ~93.3, MGO ~95.1, LNG ~79.5, Bio-methanol ~10-20','3. GHG Intensity = Σ(Energy_MJ × WtW) / Σ(Energy_MJ)','4. Compare to annual target: 91.16 (2025), 89.34 (2030), etc.','5. If excess: calculate surplus gCO₂eq; penalty = surplus × (1/41.4 MJ/kg VLSFO) × €2,400/t VLSFO'],note:'WtW factors from EU Delegated Regulation on LCA methodology. Bio-methanol and e-fuels require supply chain certification (ISCC, REDcert2 or equivalent) to claim low WtW factor.'}},
+  ukets:{id:'ukets',code:'UK ETS',name:'UK Emissions Trading Scheme',authority:'UK Government / Climate Change Act 2008 / SI 2020/1265',status:'IN FORCE',color:'#f97316',category:'Market-Based',inForce:'01 July 2026 (domestic maritime)',lastUpdate:'Jul 2026 — UK ETS maritime launched (domestic voyages + in-port emissions)',nextUpdate:'Apr 2028 — first UKA surrender (2026 + 2027 emissions)',badge:'UK LAW',applies:{types:['Cargo ships','Passenger ships','Offshore supply vessels','Ro-Ro ships'],minSize:'5,000 GT',voyages:'Domestic UK↔UK voyages (100%; GB↔NI 50%) and emissions in UK ports (100%). International voyages not covered yet.',flag:'All flag states calling UK ports'},areas:'UK ports — parallel structure to EU ETS; separate scheme post-Brexit',highlights:['UK ETS maritime is IN FORCE from 1 July 2026 for cargo and passenger ships ≥5,000 GT','Scope: domestic voyages between UK ports (100%; Great Britain ↔ Northern Ireland 50%) and all emissions while in a UK port (100%)','No phase-in: 100% of in-scope emissions from day one; covers CO₂, CH₄ and N₂O','International voyages are NOT covered yet — expansion consulted on for ~2028','Offshore ships ≥5,000 GT join from 1 January 2027','First surrender due 30 April 2028, covering 2026 and 2027 emissions','Uses UK Allowances (UKAs), separate from EU EUAs; a UK–EU ETS linkage is under negotiation','Vessels trading both EU and UK ports can face both schemes on the same voyage (EU ETS 50% on UK↔EU legs)'],timeline:[{date:'2024–2025',event:'Consultations and design',detail:'UK ETS Authority confirms domestic maritime inclusion from 2026.',type:'past'},{date:'Jul 2026',event:'UK ETS maritime LAUNCHED ✓',detail:'Domestic voyages and in-port emissions covered at 100% for ships ≥5,000 GT.',type:'past'},{date:'Jan 2027',event:'Offshore ships added',detail:'Offshore vessels ≥5,000 GT brought into scope.',type:'future'},{date:'Apr 2028',event:'First UKA surrender',detail:'Allowances for verified 2026 + 2027 emissions surrendered by 30 April 2028.',type:'future'},{date:'~2028',event:'International voyages (proposed)',detail:'Consultation on extending the scheme to international maritime emissions.',type:'future'}],calc:{formula:'UKAs Required = CO₂e × Voyage factor',units:'UKA (UK Allowance) = 1 tonne CO₂e',steps:['1. Voyage CO₂e = fuel consumed (MT) × emission factor (CO₂ + CH₄ + N₂O)','2. Voyage factor: 1.00 domestic UK↔UK; 0.50 GB↔NI; 1.00 for emissions in UK ports; 0 for international voyages','3. No phase-in: 100% from 1 July 2026','4. UKAs required = CO₂e × voyage factor','5. Cost = UKAs × UKA price (£/tonne)'],note:'EU ETS and UK ETS are entirely separate; vessels must manage both independently. No mutual recognition of allowances. Watch for divergence in methodology post-2026.'}},
+  fueleu:{id:'fueleu',code:'FuelEU',name:'FuelEU Maritime',authority:'European Union / Regulation (EU) 2023/1805',status:'IN FORCE',color:'#22c55e',category:'Fuel Standard',inForce:'01 January 2025',lastUpdate:'Jan 2025 — entered force; monitoring underway for first compliance year',nextUpdate:'Sep 2026 — first compliance statement due (2025 data)',badge:'EU LAW',applies:{types:['All cargo ships','All passenger ships','Offshore vessels'],minSize:'5,000 GT',voyages:'EU port calls — intra-EU (100%), extra-EU voyages (50%), at-berth energy (100%)',flag:'All flag states calling EU/EEA ports'},areas:'EU/EEA ports — energy used at berth (OPS) and 50% of extra-EU voyage energy consumption',highlights:['GHG intensity of total onboard energy use must not exceed annual limit (Well-to-Wake basis)','Baseline: 91.16 gCO₂eq/MJ; trajectory: -2% (2025), -6% (2030), -14.5% (2035), -31% (2040), -62% (2045), -80% (2050)','Well-to-Wake (WtW) lifecycle emissions — not just tank-to-wake; rewards sustainable fuel production chains','Onshore Power Supply (OPS / cold ironing) mandatory at EU ports from 2030 for container and passenger ships','Non-compliance penalty: €2,400 per tonne VLSFO equivalent excess GHG + vessel detained if 3 consecutive years','Pooling mechanism: surplus compliance can be sold to non-compliant vessels within same company or externally','SAF (sustainable aviation fuel), green methanol, green ammonia, e-fuels receive lifecycle WtW carbon credits','RFNBO (renewable fuels of non-biological origin) multiplier: counts double toward 2030 sub-target'],timeline:[{date:'Jan 2025',event:'FuelEU enters force ✓',detail:'First reporting year underway; GHG intensity monitoring required for all eligible ships.',type:'past'},{date:'Sep 2026',event:'First compliance statement due',detail:'Shipping companies submit 2025 GHG intensity documents via accredited verifier to EU database. Non-compliance penalties apply.',type:'future'},{date:'Jan 2030',event:'OPS mandatory + 6% reduction',detail:'Container and passenger ships must use shore power at TEN-T core ports; GHG limit tightens to 85.69 gCO₂eq/MJ (−6%).',type:'future'},{date:'2035–2050',event:'Progressive tightening',detail:'14.5% (2035) → 31% (2040) → 62% (2045) → 80% (2050) reductions — forces increasing low-carbon and zero-carbon fuel adoption.',type:'future'}],calc:{formula:'GHG Intensity = Σ(Energy_i × WtW_factor_i) / Σ(Energy_i)',units:'gCO₂eq/MJ (Well-to-Wake)',steps:['1. Convert each fuel to energy: MJ = MT × LCV (MJ/kg × 1000)','   LCV: VLSFO 40.2, HFO 40.2, MGO 42.7, LNG 48.0, Methanol 19.9 MJ/kg','2. Apply WtW GHG factor per fuel type (gCO₂eq/MJ)','   WtW: VLSFO ~91.5, HFO ~93.3, MGO ~95.1, LNG ~79.5, Bio-methanol ~10-20','3. GHG Intensity = Σ(Energy_MJ × WtW) / Σ(Energy_MJ)','4. Compare to annual target: 91.16 (2025), 89.34 (2030), etc.','5. If excess: calculate surplus gCO₂eq; penalty = surplus × (1/41.4 MJ/kg VLSFO) × €2,400/t VLSFO'],note:'WtW factors from EU Delegated Regulation on LCA methodology. Bio-methanol and e-fuels require supply chain certification (ISCC, REDcert2 or equivalent) to claim low WtW factor.'}},
   imonetzero:{id:'imonetzero',code:'IMO 2023',name:'IMO Net Zero GHG Strategy',authority:'IMO / MEPC Resolution MEPC.377(80)',status:'FRAMEWORK',color:'#06b6d4',category:'Framework',inForce:'Adopted July 2023',lastUpdate:'MEPC 84 — May 2026 (NZF intact; NE Atlantic ECA adopted; next attempt Dec 2026)',nextUpdate:'MEPC 85 + resumed ES.2 — December 2026 (NZF adoption)',badge:'IMO',applies:{types:['International shipping — all vessel types'],minSize:'Framework level; GFI/NZF applies ≥5,000 GT when enacted',voyages:'International shipping',flag:'All IMO member states (175+)'},areas:'Global — overarching strategic framework for all IMO GHG measures',highlights:['Net zero GHG emissions by or around 2050 — committed target (strengthened from previous 50% strategy)','Indicative checkpoints: 20–30% reduction by 2030 and 70–80% reduction by 2040 vs 2008 baseline','Zero/near-zero GHG fuels to represent ≥5% (striving 10%) of energy used in shipping by 2030','MEPC 83 (Apr 2025) APPROVED the IMO Net-Zero Framework (NZF) — GFI standard + economic pricing mechanism','NZF formal adoption was DEFERRED at MEPC ES.2 (Oct 2025): vote 57 for delay, 49 against; Saudi Arabia motion prevailed. US, China, Russia, Saudi Arabia, UAE opposed','GFI (GHG Fuel Intensity): ships must reduce WtW GHG per MJ of energy used, with two tiers — Base Target and Direct Compliance Target','Economic measure: Tier 1 deficit units purchased at $100/tCO₂eq; Tier 2 surcharge; surplus units earnable by low-GHG ships','MEPC 84 (Apr-May 2026): NZF framework survived intact despite renewed US/Saudi pressure; NE Atlantic ECA formally adopted; NZF adoption rescheduled to MEPC 85 + resumed ES.2, December 2026','CII and EEXI are first-generation short-term measures; NZF/GFI is the more impactful medium-term framework'],timeline:[{date:'Jul 2023',event:'Revised GHG Strategy adopted — MEPC 80',detail:'Resolution MEPC.377(80) adopted: net zero by 2050, 20-30% by 2030, 70-80% by 2040 vs 2008.',type:'past'},{date:'Oct 2024',event:'MEPC 82 — NZF draft text advanced',detail:'GFI and economic measure text advanced; basket of candidate measures narrowed.',type:'past'},{date:'Apr 2025',event:'MEPC 83 — NZF APPROVED ✓',detail:'68 votes in favour, 16 against, 25 abstentions. IMO NZF approved as amendments to MARPOL Annex VI Chapter 5. CII Z-factors extended to 2030. Sent to MEPC ES.2 for formal adoption.',type:'past'},{date:'Oct 2025',event:'MEPC ES.2 — Adoption ADJOURNED ✗',detail:'57 states voted to adjourn, 49 against. Saudi Arabia motion prevailed. US (Trump admin), China, Russia, Singapore, Greece, Cyprus shifted or abstained. Extraordinary session reconvenes October 2026.',type:'past'},{date:'May 2026',event:'MEPC 84 — NZF intact; NE Atlantic ECA adopted ✓',detail:'MEPC 84 concluded 1 May 2026. NZF framework survived US/Saudi/UAE push to reopen — agreed as sole basis for further negotiation. NE Atlantic ECA formally adopted (SOx/NOx/PM, in force 2028). Two ISWG-GHG intersessionals (Sep 2026 + pre-MEPC 85) before December adoption vote.',type:'past'},{date:'Dec 2026',event:'MEPC 85 + resumed ES.2 — NZF adoption scheduled',detail:'NZF adoption rescheduled to December 2026: MEPC 85 immediately followed by resumed Extraordinary Session 2. If adopted, tacit acceptance ~10 months; entry into force ~late 2027/early 2028.',type:'future'},{date:'2028',event:'NZF entry into force (if Dec 2026 adopted)',detail:'First GFI compliance year 2028. Ships must register in IMO GFI Registry by 1 Oct 2027.',type:'future'},{date:'2030',event:'First IMO checkpoint',detail:'20–30% GHG reduction vs 2008; ≥5% zero/near-zero fuel share.',type:'future'},{date:'2050',event:'Net zero target',detail:'GHG emissions from international shipping to reach net zero.',type:'future'}],calc:{formula:'GFI (GHG Fuel Intensity) = Σ(Energy_i × WtW_factor_i) / Σ(Energy_i)',units:'gCO₂eq/MJ Well-to-Wake — same metric as FuelEU Maritime',steps:['1. This is a strategic framework — no current direct vessel calculation obligation','2. Implementing measure NZF/GFI: adoption deferred to Oct 2026 (next attempt)','3. GFI = total WtW GHG emissions / total energy used — identical methodology to FuelEU Maritime','4. Two compliance tiers: Direct Compliance Target (earn surplus units) and Base Target (buy remedial units)','5. Economic measure: Tier 1 deficit paid at $100/tCO₂eq; revenue goes to IMO Net-Zero Fund','6. Track fleet CII (current obligation) and model GFI exposure for newbuilding and fuel strategy'],note:'NZF adoption adjourned at MEPC ES.2 (Oct 2025). MEPC 84 (May 2026): framework survived intact; NE Atlantic ECA formally adopted. NZF next adoption attempt: MEPC 85 + resumed ES.2, December 2026. Entry into force earliest late 2027/early 2028. CII and EEXI remain primary obligations until then.'}},
   imodcs:{id:'imodcs',code:'IMO DCS',name:'IMO Data Collection System',authority:'IMO / MARPOL Annex VI Reg. 22A',status:'IN FORCE',color:'#6366f1',category:'Reporting',inForce:'01 March 2018',lastUpdate:'MEPC 83 — April 2025 (DCS accessibility amendments adopted)',nextUpdate:'Jan 2026 — additional reporting items (fuel by equipment)',badge:'MARPOL',applies:{types:['All ship types'],minSize:'5,000 GT',voyages:'International voyages',flag:'All flag states'},areas:'Global — annual data submission to IMO Ship Fuel Oil Consumption Database (GISIS)',highlights:['Annual reporting of fuel oil consumption per fuel type and ship activity to flag state and IMO GISIS','Data forms the empirical foundation for CII calculation and MEPC GHG policy reviews','Statement of Compliance (SoC) issued by flag/RO upon verified data submission','SEEMP Part II must document the data collection methodology used by the ship','IMO DCS, EU MRV (Regulation 2015/757), and UK MRV are three separate but overlapping systems — data must be consistent','Ship Fuel Oil Consumption Database aggregated and published anonymously by IMO annually','Non-submission: vessel may be detained at port state control; flag state may withdraw Certificate','Approximately 6,000+ vessels submit data annually to IMO GISIS'],timeline:[{date:'Mar 2018',event:'IMO DCS enters force',detail:'First reporting period begins for ships ≥5,000 GT on international voyages.',type:'past'},{date:'2019',event:'First data published',detail:'IMO publishes aggregated 2018 fleet consumption data via GISIS.',type:'past'},{date:'2023',event:'CII linkage',detail:'IMO DCS data directly feeds CII calculation methodology; DCS and CII are interlinked.',type:'past'},{date:'2025–2026',event:'Expanded DCS reporting',detail:'From Jan 2026: additional reporting items including total fuel consumption by equipment type and non-voyage periods per MEPC 83 amendments.',type:'future'}],calc:{formula:'Annual CO₂ = Σ(Fuel type quantity (MT) × CO₂ factor)',units:'Tonnes CO₂ per calendar year',steps:['1. Record fuel consumption per fuel type (HFO, VLSFO, MDO, MGO, LNG, methanol, LPG…)','2. Apply CO₂ conversion factors: HFO 3.114, VLSFO 3.151, MDO 3.179, MGO 3.206, LNG 2.750','3. Sum total CO₂ for the calendar year (01 Jan – 31 Dec)','4. Record hours underway and distance sailed on international voyages','5. Submit to flag state administration by 31 March following the reporting year','6. Flag state submits to IMO GISIS; Statement of Compliance issued'],note:'IMO DCS data must align with EU MRV and UK MRV submissions. Discrepancies create PSC risk. Recommended: use single verified data source (e.g. bunker delivery notes + flow meters) across all three reporting systems.'}},
   seemp:{id:'seemp',code:'SEEMP',name:'Ship Energy Efficiency Management Plan',authority:'IMO / MARPOL Annex VI Reg. 26',status:'IN FORCE',color:'#f43f5e',category:'Management',inForce:'01 January 2013 (SEEMP I); 01 Jan 2023 (Part III)',lastUpdate:'MEPC 83 — April 2025 (SEEMP guidelines amended; Part III revision required)',nextUpdate:'MEPC 84 — Spring 2026 (Phase 2 review)',badge:'MARPOL',applies:{types:['All ship types'],minSize:'All ships (basic SEEMP); 5,000 GT (SEEMP Part III with CII plan)',voyages:'All international voyages',flag:'All flag states'},areas:'Global — ship-specific onboard management plan',highlights:['Three-part structure: Part I (energy management measures), Part II (DCS data methodology), Part III (CII implementation plan)','SEEMP Part III mandatory for ships ≥5,000 GT from 1 January 2023','MEPC 83 (Apr 2025): SEEMP guidelines amended — Part III must be revised to include 2026–2028 CII implementation plan with new Z-factors; deadline 31 December 2025','Part III must include: annual CII reference values, required CII, corrective action plan for D/E ratings','Annual verification by flag state or recognized organization required; must be on board at all times','Practical SEEMP measures: trim optimization, slow steaming, hull cleaning intervals, weather routing, propeller polishing','Non-compliance can result in vessel detention at port state control','SEEMP is the ship-specific operational roadmap linking onboard practices to fleet-level GHG strategy'],timeline:[{date:'Jan 2013',event:'SEEMP Part I mandatory',detail:'All ships must have a Ship Energy Efficiency Management Plan onboard.',type:'past'},{date:'Mar 2018',event:'SEEMP Part II added',detail:'Data collection methodology for IMO DCS must be documented in Part II.',type:'past'},{date:'Jan 2023',event:'SEEMP Part III mandatory',detail:'CII implementation plan required for ships ≥5,000 GT; verified by flag/RO.',type:'past'},{date:'Apr 2025',event:'MEPC 83 — SEEMP guidelines amended ✓',detail:'Res. MEPC.401(83): "underway" definition changed to FAOP→EOSP. SEEMP Part III revision required by 31 Dec 2025 to incorporate 2026–2028 CII plan with new Z-factors.',type:'past'},{date:'Dec 2025',event:'SEEMP Part III revision deadline',detail:'Revised Part III covering 2026–2028 CII plan must be approved by flag/RO before 1 January 2026.',type:'past'},{date:'2026–2028',event:'Phase 2 SEEMP review',detail:'Possible development of new CII metrics; SEEMP framework enhancements under Phase 2 review.',type:'future'}],calc:{formula:'No direct calculation — management document containing CII targets and action plans',units:'N/A (management plan, not numerical index)',steps:['1. Establish baseline: previous year attained CII and rating A–E','2. Determine current year required CII from IMO reference line × reduction factor','3. Document operational measures planned to achieve target (trim, speed, routing, maintenance)','4. Implement monthly monitoring of fuel/distance against target trajectory','5. If trajectory shows D/E outcome: trigger corrective action (speed reduction, hull clean, etc.)','6. Verify and submit to flag/RO; keep updated SEEMP Part III onboard'],note:'SEEMP Part III must be ship-specific — generic fleet templates are insufficient for PSC. Each vessel requires its own required CII, reference value, and corrective action triggers specific to its type, size, and trade.'}},
@@ -1279,7 +1262,7 @@ const FEED_DATA = [
     body:'Regulation (EU) 2023/1805 applies from 1 Jan 2025. WtW GHG intensity monitoring mandatory for eligible voyages.',
     points:[
       'Regulation (EU) 2023/1805 now in force — applies to all ships ≥5,000 GT calling EU/EEA ports',
-      '2025 GHG intensity target: 91.16 gCO₂eq/MJ (WtW) — same as current baseline; tightens to 87.9 (2030), 70.0 (2035), 45.0 (2040)',
+      'GHG intensity limit (WtW): 89.34 gCO₂eq/MJ for 2025–2029 (2% below the 91.16 reference); 85.69 (2030), 77.94 (2035), 62.90 (2040)',
       'Vessels must monitor energy used on: (a) voyages between EU ports, (b) voyages from/to non-EU ports (50% scope), (c) energy used at berth in EU ports (100%)',
       'Compliance documents — first FuelEU Statement of Compliance due 2026 covering 2025 data',
       'Pooling mechanism: compliant ships can pool with non-compliant ships within a shipping company',
@@ -1330,16 +1313,16 @@ const FEED_DATA = [
     url:'https://gcaptain.com/imo-climate-talks-stay-alive-as-carbon-plan-survives-u-s-pushback-at-mepc-84/'
   },
   {
-    date:'Jan 2026',source:'UK Government',srcColor:'#f97316',cat:'UK LAW',reg:'UK ETS',sev:'HIGH',
-    title:'UK ETS Shipping — Phase-in Commences 1 January 2026',
-    body:'UK ETS obligation starts at 40% phase-in. First surrender due September 2027. Separate from EU ETS.',
+    date:'Jul 2026',source:'UK Government',srcColor:'#f97316',cat:'UK LAW',reg:'UK ETS',sev:'HIGH',
+    title:'UK ETS Maritime — In Force 1 July 2026',
+    body:'Domestic UK voyages and emissions in UK ports covered at 100% for ships ≥5,000 GT. No phase-in. International voyages not covered yet.',
     points:[
-      'UK ETS shipping in force from 1 January 2026 — 40% phase-in for 2026 data',
-      'Phase-in schedule: 40%(2026) → 70%(2027) → 100%(2028)',
-      'Applies to ships ≥5,000 GT calling UK ports — same GT threshold as EU ETS',
-      'UK Allowances (UKAs) are entirely separate from EU EUAs — no mutual recognition; two separate registries required',
-      'First surrender: 40% of verified 2026 emissions, due 30 September 2027',
-      'Register with UK ETS registry before 1 April 2026 — late registration may trigger enforcement action by UK MCA'
+      'UK ETS maritime in force from 1 July 2026 — cargo and passenger ships ≥5,000 GT',
+      'Scope: voyages between UK ports (100%; GB ↔ Northern Ireland 50%) and emissions while in UK ports (100%)',
+      'No phase-in — 100% of in-scope CO₂, CH₄ and N₂O from day one',
+      'International voyages not covered yet; expansion consulted on for ~2028',
+      'Offshore ships ≥5,000 GT join from 1 January 2027',
+      'First surrender: 30 April 2028, covering 2026 and 2027 emissions'
     ],
     url:'https://www.gov.uk/government/collections/uk-ets-maritime'
   },
@@ -1454,8 +1437,6 @@ function stalenessHTML(id, compact=false) {
 // REGULATORY PULSE — live API + web search check
 // ═══════════════════════════════════════════════════
 async function runRegulatoryPulse() {
-  const key = window._emisiqKey;
-  if (!key) { alert('API key required — click ⚙ to enter your key.'); return; }
   const btn = document.getElementById('pulse-btn');
   const panel = document.getElementById('pulse-panel');
   const statusEl = document.getElementById('pulse-status');
@@ -1483,23 +1464,14 @@ ${checkList}
 For each item, search for recent news and report: (1) any changes since May 2026, (2) source and date, (3) operational impact. Return valid JSON array: [{"id":"...","name":"...","status":"changed|unchanged|unclear","headline":"...","detail":"...","source":"...","date":"..."}]. JSON only, no markdown.`;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:2000,
-        tools:[{type:'web_search_20250305',name:'web_search'}],
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    const data = await resp.json();
-    // Extract text blocks (web_search may return tool_use + text)
-    const textBlock = data.content?.filter(b=>b.type==='text').map(b=>b.text).join('');
+    const data = await callAI({ mode: 'pulse', prompt });
+    const textBlock = data.text || '';
     let results = [];
     try {
       const clean = textBlock.replace(/```json|```/g,'').trim();
-      results = JSON.parse(clean);
+      // The model may add a sentence around the JSON; take the array itself.
+      const arr = clean.slice(clean.indexOf('['), clean.lastIndexOf(']') + 1);
+      results = JSON.parse(arr || clean);
     } catch(e) { results = [{id:'parse_err',name:'Parse error',status:'unclear',headline:'Could not parse response',detail:textBlock?.slice(0,300)||'No text returned',source:'—',date:today}]; }
 
     statusEl.textContent = `Checked ${results.length} items · ${today}`;
@@ -1522,8 +1494,8 @@ For each item, search for recent news and report: (1) any changes since May 2026
     });
 
   } catch(err) {
-    statusEl.textContent = 'Error';
-    resultsEl.innerHTML = `<div style="color:#f87171;font-size:0.8rem;padding:0.5rem 0;">Error: ${err.message}</div>`;
+    statusEl.textContent = 'Live Pulse unavailable';
+    resultsEl.innerHTML = `<div class="pulse-result"><div class="pulse-result-body">Live regulatory scan is offline (${err.message}). The static regulation data on this page is current as of its last verified update.</div></div>`;
   }
   btn.disabled = false;
   btn.textContent = '⚡ Check for Updates';
@@ -1838,6 +1810,13 @@ function calcCII() {
   `;
 }
 
+// ETS emission factors, tCO2e/t: CO2 + CH4·28 + N2O·265 (MRV defaults 0.00005 / 0.00018 g/g).
+// The CII uses the bare CO2 factor; the EU ETS adds CH4/N2O from 2026; the UK ETS from its start.
+const ETS_CO2E = { '3.114': 3.1631, '3.151': 3.2001, '3.206': 3.2551, '3.179': 3.2281 };
+function etsCf(cf, year = 2026) {
+  return year >= 2026 ? (ETS_CO2E[Number(cf).toFixed(3)] ?? cf) : cf; // LNG: engine/methane-slip dependent, CO2 shown
+}
+
 function calcETS() {
   const voyage = parseFloat(document.getElementById('ets-voyage').value);
   const cf = parseFloat(document.getElementById('ets-fuel').value);
@@ -1847,7 +1826,7 @@ function calcETS() {
   
   if (!fuel || !price) { alert('Please fill all fields'); return; }
   
-  const co2 = fuel * cf;
+  const co2 = fuel * etsCf(cf, phasein === 1 ? 2026 : 2025);
   const euasRequired = co2 * voyage * phasein;
   const cost = euasRequired * price;
   const yearLabel = phasein === 0.4 ? '2024' : phasein === 0.7 ? '2025' : '2026';
@@ -1862,7 +1841,7 @@ function calcETS() {
       <div class="result-unit">${euasRequired.toFixed(0)} EUAs required</div>
     </div>
     <div class="result-breakdown">
-      <div class="breakdown-row"><span class="breakdown-label">Total CO₂ emitted</span><span class="breakdown-val">${co2.toFixed(0)} tCO₂</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Emissions (ETS basis)</span><span class="breakdown-val">${co2.toFixed(0)} tCO₂${phasein === 1 ? 'e' : ''}</span></div>
       <div class="breakdown-row"><span class="breakdown-label">Voyage factor</span><span class="breakdown-val">${(voyage*100).toFixed(0)}%</span></div>
       <div class="breakdown-row"><span class="breakdown-label">Phase-in factor</span><span class="breakdown-val">${(phasein*100).toFixed(0)}%</span></div>
       <div class="breakdown-row"><span class="breakdown-label">EUAs required</span><span class="breakdown-val">${euasRequired.toFixed(0)} EUA</span></div>
@@ -1933,8 +1912,8 @@ function calcFuelEU() {
   
   // LCV (MJ/kg) and WtW (gCO2eq/MJ)
   const fuels = [
-    {name:'VLSFO',mt:vlsfo,lcv:40.2,wtw:91.5},{name:'HFO',mt:hfo,lcv:40.2,wtw:93.3},
-    {name:'MGO',mt:mgo,lcv:42.7,wtw:95.1},{name:'LNG',mt:lng,lcv:48.0,wtw:79.5},
+    {name:'VLSFO',mt:vlsfo,lcv:41.0,wtw:91.39},{name:'HFO',mt:hfo,lcv:40.5,wtw:91.74},
+    {name:'MGO',mt:mgo,lcv:42.7,wtw:90.77},{name:'LNG',mt:lng,lcv:48.0,wtw:79.5},
     {name:'Biofuel blend',mt:bio,lcv:38.0,wtw:15.0}
   ].filter(f=>f.mt>0);
   
@@ -1951,8 +1930,10 @@ function calcFuelEU() {
   const compliant = ghgIntensity <= target;
   const excess = ghgIntensity - target;
   
-  // Penalty calculation (simplified)
-  const vlsfoEquiv = totalEnergy * Math.max(0, excess) / (41.4 * 1000); // tonne VLSFO equiv
+  // Penalty (Reg. 2023/1805 Annex IV): |CB| / (GHGIE_actual × 41,000) × €2,400,
+  // where CB = (limit − actual) × energy, in gCO₂eq.
+  const deficitG = totalEnergy * Math.max(0, excess);
+  const vlsfoEquiv = deficitG / (ghgIntensity * 41000); // tonnes VLSFO-equivalent
   const penalty = vlsfoEquiv * 2400;
   
   document.querySelector('#calc-fueleu .result-placeholder').style.display = 'none';
@@ -1971,7 +1952,7 @@ function calcFuelEU() {
       ${!compliant?`<div class="breakdown-row" style="border-color:rgba(239,68,68,0.2);"><span class="breakdown-label" style="color:#f87171;">Excess GHG</span><span class="breakdown-val" style="color:#f87171;">+${excess.toFixed(2)} gCO₂eq/MJ</span></div>
       <div class="breakdown-row" style="border-color:rgba(239,68,68,0.2);"><span class="breakdown-label" style="color:#f87171;">Est. penalty</span><span class="breakdown-val" style="color:#f87171;">€${penalty.toLocaleString('en-US',{maximumFractionDigits:0})}</span></div>`:''}
     </div>
-    <div class="disclaimer">WtW factors: VLSFO 91.5, HFO 93.3, MGO 95.1, LNG 79.5, Biofuel 15.0 gCO₂eq/MJ (indicative). Actual factors per EU Delegated Regulation on LCA. Biofuel WtW requires certified supply chain documentation. Penalty per EU Reg. 2023/1805 Art. 23.</div>
+    <div class="disclaimer">WtW factors (FuelEU Annex II defaults, RED II GWP 25/298): VLSFO 91.39 (LFO, &lt;80 cSt), HFO 91.74, MGO 90.77; LNG 79.5 and biofuel 15.0 indicative. Actual factors per EU Delegated Regulation on LCA. Biofuel WtW requires certified supply chain documentation. Penalty per EU Reg. 2023/1805 Art. 23.</div>
   `;
 }
 
@@ -1982,10 +1963,11 @@ function calcUKETS() {
   const phasein = parseFloat(document.getElementById('ukets-year').value);
   const price = parseFloat(document.getElementById('ukets-price').value);
   if (!fuel || !price) { alert('Please fill all fields'); return; }
-  const co2 = fuel * cf;
+  const co2 = fuel * etsCf(cf, 2026);
   const ukasRequired = co2 * voyage * phasein;
   const cost = ukasRequired * price;
-  const yearLabel = phasein === 0.4 ? '2026' : phasein === 0.7 ? '2027' : '2028+';
+  const yearSel = document.getElementById('ukets-year');
+  const yearLabel = yearSel.options[yearSel.selectedIndex].text.split(' ')[0];
   document.querySelector('#calc-ukets .result-placeholder').style.display = 'none';
   const out = document.getElementById('ukets-output');
   out.style.display = 'block';
@@ -1996,14 +1978,14 @@ function calcUKETS() {
       <div class="result-unit">${ukasRequired.toFixed(0)} UKAs required</div>
     </div>
     <div class="result-breakdown">
-      <div class="breakdown-row"><span class="breakdown-label">Total CO₂ emitted</span><span class="breakdown-val">${co2.toFixed(0)} tCO₂</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Emissions (ETS basis)</span><span class="breakdown-val">${co2.toFixed(0)} tCO₂${phasein === 1 ? 'e' : ''}</span></div>
       <div class="breakdown-row"><span class="breakdown-label">Voyage factor</span><span class="breakdown-val">${(voyage*100).toFixed(0)}%</span></div>
       <div class="breakdown-row"><span class="breakdown-label">Phase-in factor</span><span class="breakdown-val">${(phasein*100).toFixed(0)}%</span></div>
       <div class="breakdown-row"><span class="breakdown-label">UKAs required</span><span class="breakdown-val">${ukasRequired.toFixed(0)} UKA</span></div>
       <div class="breakdown-row"><span class="breakdown-label">UKA price used</span><span class="breakdown-val">£${price}/tonne</span></div>
       <div class="breakdown-row"><span class="breakdown-label">Total cost</span><span class="breakdown-val" style="color:#fb923c">£${cost.toLocaleString('en-US',{maximumFractionDigits:0})}</span></div>
     </div>
-    <div class="disclaimer">UK ETS in force from 1 Jan 2026. Phase-in: 40%(2026), 70%(2027), 100%(2028+). First UKA surrender due 30 Sep 2027 (for 2026 data). ENTIRELY SEPARATE from EU ETS — no mutual recognition. Vessels calling both EU and UK ports face combined exposure. UKA price typically lower than EUA; check ICE/LEBA for current market.</div>
+    <div class="disclaimer">UK ETS maritime in force from 1 Jul 2026 for cargo and passenger ships ≥5,000 GT: domestic UK↔UK voyages (100%; GB↔NI 50%) and emissions in UK ports (100%). No phase-in. International voyages are not covered (expansion proposed for ~2028). Offshore ships from 1 Jan 2027. First surrender 30 Apr 2028 for 2026 + 2027 emissions. Separate from EU ETS — check ICE for the current UKA price.</div>
   `;
 }
 
@@ -2093,49 +2075,8 @@ function handleAIKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIMessage(); }
 }
 
-async function sendAIMessage() {
-  const input = document.getElementById('ai-input');
-  const msg = input.value.trim();
-  if (!msg) return;
-  
-  input.value = '';
-  appendAIMsg('user', msg);
-  aiHistory.push({role:'user', content: msg});
-  
-  document.getElementById('ai-send-btn').disabled = true;
-  showTyping(true);
-  
-  try {
-    const systemPrompt = buildSystemPrompt();
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: aiHistory
-      })
-    });
-    
-    const data = await response.json();
-    const reply = data.content?.[0]?.text || 'I encountered an issue. Please try again.';
-    
-    aiHistory.push({role:'assistant', content: reply});
-    if (aiHistory.length > 20) aiHistory = aiHistory.slice(-20);
-    
-    showTyping(false);
-    appendAIMsg('bot', reply);
-  } catch(err) {
-    showTyping(false);
-    appendAIMsg('bot', 'Connection error. Please check your network and try again.');
-  }
-  
-  document.getElementById('ai-send-btn').disabled = false;
-}
-
 function buildSystemPrompt() {
-  return `You are EmisIQ AI, an expert maritime emissions regulation assistant for maritime professionals — Performance Desk analysts, Operations teams, and Chartering teams. Today's date is April 2026.
+  return `You are EmisIQ AI, an expert maritime emissions regulation assistant for maritime professionals — Performance Desk analysts, Operations teams, and Chartering teams. Today's date is ${new Date().toISOString().slice(0,10)}.
 
 CURRENT REGULATORY STATUS (as of April 2026):
 
@@ -2164,16 +2105,21 @@ EU ETS — IN FORCE, 100% phase-in from 1 January 2026:
 - EUA surrender by 30 September each year
 - Non-compliance: €100/tCO₂ + allowances still required
 
-UK ETS — IN FORCE from 1 January 2026:
-- 40% phase-in 2026, 70% 2027, 100% 2028+
-- Uses UKAs (UK Allowances) — entirely separate from EU ETS; no mutual recognition
-- Intra-UK: 100%; UK↔non-UK: 50%
-- First surrender (2026 data at 40%): 30 September 2027
+UK ETS maritime — IN FORCE from 1 July 2026:
+- Cargo and passenger ships ≥5,000 GT; offshore ships from 1 Jan 2027
+- Domestic UK↔UK voyages 100% (GB↔NI 50%); emissions in UK ports 100%
+- NO phase-in; covers CO₂, CH₄, N₂O
+- International voyages NOT covered (expansion proposed ~2028)
+- Uses UKAs (UK Allowances), separate from EU ETS
+- First surrender: 30 April 2028 for 2026 + 2027 emissions
 
 FuelEU Maritime — IN FORCE from 1 January 2025:
-- GHG intensity limit (WtW basis): 91.16 gCO₂eq/MJ (2025), 89.34 (2030), 78.51 (2035)
+- GHG intensity limit (WtW basis): 89.34 gCO₂eq/MJ for 2025–2029 (2% below the 91.16 reference), 85.69 (2030–34), 77.94 (2035–39), 62.90 (2040–44)
 - Applies to ships ≥5,000 GT calling EU/EEA ports
-- Penalty: €2,400/tonne VLSFO equivalent excess
+- Penalty: €2,400 per tonne VLSFO-equivalent = |CB| / (attained GHGIE × 41,000) × 2,400, CB in gCO₂eq
+- Default WtW (Annex II, RED II GWP CH₄ 25 / N₂O 298): HFO 91.74, VLSFO/LFO 91.39, MGO 90.77 gCO₂eq/MJ
+- One fuel, several factors by boundary: HFO CII CF 3.114 tCO₂/t (TtW CO₂) · EU/UK ETS 3.1631 tCO₂e/t (CO₂+CH₄+N₂O, from 2026) · FuelEU 91.74 gCO₂e/MJ (WtW, RED II GWP). VLSFO takes its MRV class from viscosity: <80 cSt LFO (3.151 / 3.2001 / 91.39), ≥80 cSt HFO. MGO: 3.206 / 3.2551 / 90.77
+- FuelEU scope: Norway and Iceland are third-country ports until FuelEU enters the EEA Agreement (not before 2028); they ARE in the EU ETS. Within in-scope energy the lowest-intensity fuel (e.g. MGO) is counted first
 - OPS (shore power) mandatory at EU ports from 2030 for container/passenger ships
 - First compliance documents due 2026 (for 2025 reporting year)
 
@@ -2240,28 +2186,37 @@ document.addEventListener('DOMContentLoaded', () => {
   initOcean();
   renderCards();
   renderFeed();
-  // Settings overlay shown by default; hide if key already in memory
-  if(window._emisiqKey) document.getElementById('settings-overlay').style.display='none';
+  checkAI();
 });
 
 // ═══════════════════════════════════════════════════
-// API KEY MANAGEMENT
+// CLAUDE — via the EmisIQ server (/api/ai). The key never reaches the browser.
 // ═══════════════════════════════════════════════════
-window._emisiqKey = '';
+window._aiReady = false;
 
-function saveAPIKey() {
-  const k = document.getElementById('api-key-input').value.trim();
-  if(!k || !k.startsWith('sk-ant')) { alert('Please enter a valid Anthropic API key (starts with sk-ant...)'); return; }
-  window._emisiqKey = k;
-  document.getElementById('settings-overlay').style.display = 'none';
+async function checkAI() {
+  const dot = document.getElementById('ai-dot'), label = document.getElementById('ai-label');
+  try {
+    const r = await fetch('/api/health', { cache: 'no-store' });
+    const h = await r.json();
+    window._aiReady = Boolean(h.ai);
+  } catch (e) { window._aiReady = false; }
+  if (dot) dot.style.background = window._aiReady ? '#00d090' : '#f87171';
+  if (label) label.textContent = window._aiReady ? 'Claude AI' : 'AI offline';
 }
 
-function skipAPIKey() {
-  document.getElementById('settings-overlay').style.display = 'none';
+async function callAI(payload) {
+  const r = await fetch('/api/ai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  let data = {};
+  try { data = await r.json(); } catch (e) { /* non-JSON error page */ }
+  if (!r.ok) throw new Error(data.error || ('AI service returned ' + r.status));
+  return data;
 }
 
-// Override fetch in sendAIMessage to inject key
-const _origFetch = window.fetch;
 async function sendAIMessage() {
   const input = document.getElementById('ai-input');
   const msg = input.value.trim();
@@ -2271,29 +2226,18 @@ async function sendAIMessage() {
   aiHistory.push({role:'user', content: msg});
   document.getElementById('ai-send-btn').disabled = true;
   showTyping(true);
-  if (!window._emisiqKey) {
-    showTyping(false);
-    appendAIMsg('bot', 'AI Assistant needs an API key. Click the ⚙ settings button in the top-right navbar to add your Anthropic API key.');
-    document.getElementById('ai-send-btn').disabled = false;
-    return;
-  }
   try {
-    const systemPrompt = buildSystemPrompt();
-    const response = await _origFetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json','x-api-key':window._emisiqKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:systemPrompt,messages:aiHistory})
-    });
-    const data = await response.json();
-    if(data.error) { showTyping(false); appendAIMsg('bot', 'API error: ' + data.error.message); document.getElementById('ai-send-btn').disabled=false; return; }
-    const reply = data.content?.[0]?.text || 'No response received.';
+    const data = await callAI({ mode: 'chat', system: buildSystemPrompt(), messages: aiHistory });
+    const reply = data.text || 'No response received.';
     aiHistory.push({role:'assistant', content: reply});
-    if (aiHistory.length > 20) aiHistory = aiHistory.slice(-20);
+    // Keep the history short, starting on a user turn.
+    if (aiHistory.length > 20) { aiHistory = aiHistory.slice(-20); if (aiHistory[0].role !== 'user') aiHistory.shift(); }
     showTyping(false);
     appendAIMsg('bot', reply);
   } catch(err) {
+    aiHistory.pop(); // drop the unanswered question so the next one still alternates
     showTyping(false);
-    appendAIMsg('bot', 'Connection error: ' + err.message + '. Check your API key and network connection.');
+    appendAIMsg('bot', 'The AI assistant is unavailable (' + err.message + '). Calculators and regulation data still work.');
   }
   document.getElementById('ai-send-btn').disabled = false;
 }
@@ -2827,27 +2771,27 @@ function filterECA(type, el) {
 const FUEL_REF = [
   // ── FOSSIL ──────────────────────────────────────────────────────
   { cat:'fossil', name:'HFO (>0.5% S)', grade:'High Sulphur',
-    lcv:40.2,  cf:3.114,  ttw:77.4,  wtw:93.3,
+    lcv:40.5,  cf:3.114,  ttw:76.9,  wtw:91.74,
     sulphur:'>0.5%',  ecaSox:false, ecaSoxNote:'Not permitted without scrubber',
     fuelEU25: null, nzf28: null,
     note:'MARPOL Annex VI Table 1. Standard reference fuel for CII/EEXI baselines.' },
 
   { cat:'fossil', name:'VLSFO (0.5% S)', grade:'IMO 2020 Compliant',
-    lcv:40.2,  cf:3.151,  ttw:78.4,  wtw:91.5,
+    lcv:41.0,  cf:3.151,  ttw:76.9,  wtw:91.39,
     sulphur:'≤0.5%',  ecaSox:false, ecaSoxNote:'Not permitted in SOx ECAs without scrubber',
-    fuelEU25: 91.5, nzf28: 91.5,
+    fuelEU25: 91.39, nzf28: 91.39,
     note:'IMO 2020 global cap fuel. Most common bunker grade. WtW per EU DG CLIMA default.' },
 
   { cat:'fossil', name:'ULSFO (0.1% S)', grade:'ECA Compliant',
-    lcv:40.2,  cf:3.151,  ttw:78.4,  wtw:91.5,
+    lcv:41.0,  cf:3.151,  ttw:76.9,  wtw:91.39,
     sulphur:'≤0.1%',  ecaSox:true, ecaSoxNote:'ECA compliant',
-    fuelEU25: 91.5, nzf28: 91.5,
+    fuelEU25: 91.39, nzf28: 91.39,
     note:'Same combustion properties as VLSFO; lower sulphur blend. CF identical to VLSFO.' },
 
   { cat:'fossil', name:'MGO / MDO (0.1% S)', grade:'Distillate',
-    lcv:42.7,  cf:3.206,  ttw:75.1,  wtw:95.1,
+    lcv:42.7,  cf:3.206,  ttw:75.1,  wtw:90.77,
     sulphur:'≤0.1%',  ecaSox:true, ecaSoxNote:'ECA compliant',
-    fuelEU25: 95.1, nzf28: 95.1,
+    fuelEU25: 90.77, nzf28: 90.77,
     note:'Higher CF per tonne but higher LCV. Used for ECA changeover, auxiliary engines.' },
 
   { cat:'fossil', name:'LNG (fossil)', grade:'LNG',
@@ -2936,7 +2880,7 @@ function renderFuelRef(cat='all') {
   const tbody = document.getElementById('fuel-ref-body');
   if (!tbody) return;
   const fuels = cat === 'all' ? FUEL_REF : FUEL_REF.filter(f => f.cat === cat);
-  const fuelEUTarget = 91.16;
+  const fuelEUTarget = 89.34; // 2025–2029 limit (2% below the 91.16 reference)
   const nzfTarget = 85.5;
 
   tbody.innerHTML = fuels.map(f => {
@@ -2971,9 +2915,9 @@ function renderFuelRef(cat='all') {
 // FUEL EVALUATOR
 // ═══════════════════════════════════════════════════
 const FUELS_CONFIG = [
-  {id:'vlsfo', name:'VLSFO', cf:3.151, lcv:40.2, wtw:91.5, priceId:'fe-p-vlsfo', color:'#2563eb'},
-  {id:'hfo',   name:'HFO',   cf:3.114, lcv:40.2, wtw:93.3, priceId:'fe-p-hfo',   color:'#7c3aed'},
-  {id:'mgo',   name:'MGO/MDO', cf:3.206, lcv:42.7, wtw:95.1, priceId:'fe-p-mgo', color:'#0891b2'},
+  {id:'vlsfo', name:'VLSFO', cf:3.151, lcv:41.0, wtw:91.39, priceId:'fe-p-vlsfo', color:'#2563eb'},
+  {id:'hfo',   name:'HFO',   cf:3.114, lcv:40.5, wtw:91.74, priceId:'fe-p-hfo',   color:'#7c3aed'},
+  {id:'mgo',   name:'MGO/MDO', cf:3.206, lcv:42.7, wtw:90.77, priceId:'fe-p-mgo', color:'#0891b2'},
   {id:'lng',   name:'LNG',   cf:2.750, lcv:48.0, wtw:79.5, priceId:'fe-p-lng',   color:'#059669'},
   {id:'biom',  name:'Bio-methanol', cf:1.375, lcv:19.9, wtw:12.5, priceId:'fe-p-biom', color:'#16a34a'},
   {id:'emeth', name:'e-Methanol', cf:0.375, lcv:19.9, wtw:3.0, priceId:'fe-p-emeth', color:'#00d4aa'}
@@ -2998,8 +2942,8 @@ function runFuelEval() {
     const fuelPrice = parseFloat(document.getElementById(f.priceId).value) || 0;
     const fuelCost = qty * fuelPrice;
 
-    // EU ETS cost (CO₂)
-    const co2 = qty * f.cf;
+    // EU ETS cost (CO₂e from 2026: CO₂ + CH₄ + N₂O)
+    const co2 = qty * etsCf(f.cf, etsPhasein === 1 ? 2026 : 2025);
     const etsCost = co2 * voyageFactor * etsPhasein * euaPrice * 1.1; // EUR→USD ~1.1
 
     // FuelEU penalty
@@ -3007,7 +2951,7 @@ function runFuelEval() {
     const ghgIntensity = f.wtw;
     const excessGHG = Math.max(0, ghgIntensity - fuelEUTarget);
     const excessEnergy = energyMJ * excessGHG; // gCO₂eq excess total
-    const vlsfoEquivExcess = excessEnergy / (41400 * 1000); // tonnes VLSFO equiv
+    const vlsfoEquivExcess = excessEnergy / (ghgIntensity * 41000); // tonnes VLSFO-equivalent (Annex IV)
     const fuelEUPenalty = vlsfoEquivExcess * 2400 * voyageFactor * 1.1; // EUR→USD
 
     // IMO NZF projected cost — Tier 1 deficit at $100/tCO₂eq
@@ -3629,13 +3573,13 @@ function generatePassport() {
 
   // Commercial estimates
   const cfMap={vlsfo:3.151,hfo:3.114,mgo:3.206,lng:2.750,methanol:1.375};
-  const wtwMap={vlsfo:91.5,hfo:93.3,mgo:95.1,lng:79.5,methanol:12.5};
-  const lcvMap={vlsfo:40.2,hfo:40.2,mgo:42.7,lng:48.0,methanol:19.9};
-  const cf=cfMap[fuel]||3.151, wtw=wtwMap[fuel]||91.5, lcv=lcvMap[fuel]||40.2;
+  const wtwMap={vlsfo:91.39,hfo:91.74,mgo:90.77,lng:79.5,methanol:12.5};
+  const lcvMap={vlsfo:41.0,hfo:40.5,mgo:42.7,lng:48.0,methanol:19.9};
+  const cf=cfMap[fuel]||3.151, wtw=wtwMap[fuel]||91.39, lcv=lcvMap[fuel]||41.0;
   const annCO2=annualFuel*cf;
   const etsScope=callsEU?(['eu_med'].includes(trade)?0.80:0.35):0;
-  const annEtsCost=annCO2*etsScope*65*1.1;
-  const fuelEUTarget=91.16, fuelEUOK=wtw<=fuelEUTarget;
+  const annEtsCost=annualFuel*etsCf(cf)*etsScope*88*1.1;
+  const fuelEUTarget=89.34, fuelEUOK=wtw<=fuelEUTarget;
   const annEnMJ=annualFuel*lcv*1000;
   const nzfDef=Math.max(0,wtw-85.5);
   const annNzfCost=annEnMJ*nzfDef/1e6*100;
@@ -3673,10 +3617,10 @@ function generatePassport() {
       detail:callsEU&&gt5k?`100% phase-in from Jan 2026. CH₄/N₂O included from 2026. Surrender EUAs by 30 Sep annually. Est. annual exposure: $${Math.round(annEtsCost/1000)}k at €65 EUA. Non-compliance: €100/tCO₂ + allowances still required.`:`Not applicable.`},
     {code:'UK ETS',name:'UK Emissions Trading Scheme',color:'#f97316',
       applies:callsUK&&gt5k,status:callsUK&&gt5k?'APPLIES':'N/A',
-      detail:callsUK&&gt5k?`In force 1 Jan 2026. Phase-in: 40%(2026)→70%(2027)→100%(2028). UK Allowances (UKAs) — entirely separate from EU ETS; no mutual recognition. Register in UK ETS registry. First surrender (2026 data): 30 Sep 2027.`:`Not applicable.`},
+      detail:callsUK&&gt5k?`In force 1 Jul 2026 for domestic UK↔UK voyages and emissions in UK ports (100%, no phase-in); international voyages not covered yet. UK Allowances (UKAs) — entirely separate from EU ETS; no mutual recognition. Register in UK ETS registry. First surrender (2026 data): 30 Sep 2027.`:`Not applicable.`},
     {code:'FuelEU',name:'FuelEU Maritime',color:'#22c55e',
       applies:callsEU&&gt5k,status:callsEU&&gt5k?'APPLIES':'N/A',
-      detail:callsEU&&gt5k?`WtW GHG limit 91.16 gCO₂eq/MJ (2025). This vessel fuel (${fuel.toUpperCase()}) WtW: ${wtw} gCO₂eq/MJ — ${fuelEUOK?'✓ COMPLIANT.':'⚠ EXCEEDS by '+(wtw-fuelEUTarget).toFixed(1)+' g/MJ. Penalty €2,400/t VLSFO equiv.'} OPS mandatory 2030 (container/passenger at TEN-T ports).`:`Not applicable.`},
+      detail:callsEU&&gt5k?`WtW GHG limit 89.34 gCO₂eq/MJ (2025–2029). This vessel fuel (${fuel.toUpperCase()}) WtW: ${wtw} gCO₂eq/MJ — ${fuelEUOK?'✓ COMPLIANT.':'⚠ EXCEEDS by '+(wtw-fuelEUTarget).toFixed(1)+' g/MJ. Penalty €2,400/t VLSFO equiv.'} OPS mandatory 2030 (container/passenger at TEN-T ports).`:`Not applicable.`},
     {code:'IMO DCS',name:'IMO Data Collection System',color:'#6366f1',
       applies:gt5k,status:gt5k?'APPLIES':'N/A (<5,000 GT)',
       detail:gt5k?`Annual fuel consumption by type reported to flag state + IMO GISIS by 31 Mar. Statement of Compliance (SoC) required. From Jan 2026 (MEPC 83): additional reporting items — fuel by equipment type and non-voyage consumption.`:`Below 5,000 GT threshold.`},

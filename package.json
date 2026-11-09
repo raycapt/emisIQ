@@ -1,0 +1,15 @@
+{
+  "name": "emisiq",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "EmisIQ — maritime emissions intelligence, with Claude behind a server-side key",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --env-file-if-exists=.env --watch server.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0"
+  }
+}
