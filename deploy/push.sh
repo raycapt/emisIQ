@@ -7,6 +7,12 @@ KEY=${KEY:-$HOME/.ssh/meridian_vps}
 SSH="ssh -i $KEY -o BatchMode=yes"
 cd "$(dirname "$0")/.."
 
+# Preflight: check the live settings against the new start-up rules before touching anything.
+# On failure nothing is copied and the running version keeps serving.
+git archive --format=tar HEAD lib/gate.js deploy/preflight.mjs | $SSH "$HOST" \
+  'd=$(mktemp -d) && tar -x -C "$d" && node "$d/deploy/preflight.mjs" /etc/emisiq/env; r=$?; rm -rf "$d"; exit $r' \
+  || { echo "Deploy stopped: fix /etc/emisiq/env on the server (see above). Nothing was changed."; exit 1; }
+
 $SSH "$HOST" 'mkdir -p /opt/emisiq /etc/emisiq'
 git archive --format=tar HEAD | $SSH "$HOST" 'tar -x -C /opt/emisiq'
 [ -d node_modules ] && rsync -az --delete -e "$SSH" node_modules/ "$HOST:/opt/emisiq/node_modules/"
