@@ -15,12 +15,17 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { gateFromEnv, verifyAccess } from './lib/gate.js';
+import { gateFromEnv, verifyAccess, startupProblem } from './lib/gate.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 4890;
 const HOST = process.env.HOST || '127.0.0.1';
 const MODEL = process.env.AI_MODEL || 'claude-sonnet-5-5';
+const problem = startupProblem();
+if (problem) {
+  console.error(`EmisIQ: ${problem}`);
+  process.exit(1);
+}
 const gate = gateFromEnv();
 
 let clientPromise = null;

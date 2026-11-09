@@ -6,7 +6,8 @@
   "description": "EmisIQ — maritime emissions intelligence, with Claude behind a server-side key",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --env-file-if-exists=.env --watch server.js"
+    "dev": "node --env-file-if-exists=.env --watch server.js",
+    "test": "node --test test/*.test.mjs"
   },
   "engines": { "node": ">=20" },
   "dependencies": {

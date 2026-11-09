@@ -11,7 +11,8 @@ WorkingDirectory=/opt/emisiq
 Environment=NODE_ENV=production
 Environment=PORT=4890
 Environment=HOST=127.0.0.1
-# ANTHROPIC_API_KEY, ACCESS_TEAM_DOMAIN, ACCESS_AUD, ACCESS_ALLOWED_EMAILS
+# Required: ANTHROPIC_API_KEY, ACCESS_TEAM_DOMAIN, ACCESS_AUD, ACCESS_ALLOWED_EMAILS
+# (the server refuses to start in production without the Access settings)
 EnvironmentFile=-/etc/emisiq/env
 ExecStart=/usr/bin/node server.js
 Restart=on-failure
